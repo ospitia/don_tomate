@@ -1,6 +1,13 @@
 # Don Tomate - pomodoro app
 
+
 <img src="./app/don_tomate/Resources/don_tomate.PNG" width="100" height="100">
+
+
+### Debugging
+```Bash
+ make run-macos  
+```
 
 ## Building
 #### from navigate to app/
@@ -16,6 +23,9 @@ pyinstaller --name "Don Tomate" --windowed --onedir main.py
         ('don_tomate/Resources/reset.png', 'don_tomate/Resources'),
         ('don_tomate/Resources/sound.png', 'don_tomate/Resources'),
         ('don_tomate/Resources/stop_sound.png', 'don_tomate/Resources'),
+        ('don_tomate/Resources/settings.png', 'don_tomate/Resources'),
+        ('don_tomate/Resources/next.png', 'don_tomate/Resources'),
+        ('don_tomate/Resources/prev.png', 'don_tomate/Resources'),
         ('don_tomate/Resources/notification.wav', 'don_tomate/Resources'),
         ('don_tomate/Resources/don_tomate.png', 'don_tomate/Resources'),
     ],
@@ -31,3 +41,7 @@ pyinstaller Don\ Tomate.spec
 ```Bash
 create-dmg 'dist/Don Tomate.app' --overwrite 
 ```
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
