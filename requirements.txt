@@ -1,0 +1,17 @@
+black
+ipython
+isort
+loguru
+mkdocs
+toml
+numpy
+pip
+tqdm
+pytest
+Sphinx
+pre-commit
+kivy
+buildozer
+kivy-garden
+pillow
+pystray

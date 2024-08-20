@@ -4,9 +4,24 @@
 <img src="./app/don_tomate/Resources/don_tomate.PNG" width="100" height="100">
 
 
+## Project setting
+```Bash
+conda create -n don_tomate python=3.11
+```
+```Bash
+conda activate don_tomate
+```
+```Bash
+pip install -r requirements.txt
+```
+#### optional for development
+```Bash
+pre-commit install
+```
+
 ### Debugging
 ```Bash
- make run-macos  
+ make run-macos
 ```
 
 ## Building
@@ -29,19 +44,15 @@ pyinstaller --name "Don Tomate" --windowed --onedir main.py
         ('don_tomate/Resources/notification.wav', 'don_tomate/Resources'),
         ('don_tomate/Resources/don_tomate.png', 'don_tomate/Resources'),
     ],
-    
-        
+
+
     icon='don_tomate/Resources/don_tomate.png',
 
-``` 
-```Bash
-pyinstaller Don\ Tomate.spec 
 ```
-#### optional for development
 ```Bash
-create-dmg 'dist/Don Tomate.app' --overwrite 
+pyinstaller Don\ Tomate.spec
 ```
-<<<<<<< Updated upstream
-=======
 
->>>>>>> Stashed changes
+```Bash
+create-dmg 'dist/Don Tomate.app' --overwrite
+```
