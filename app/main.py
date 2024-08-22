@@ -65,6 +65,7 @@ class MainScreen(Screen):
         self.mute = None
         self.previous_screen_name = previous_screen_name
         self.next_screen_name = next_screen_name
+        self.flag_mute_by_stop = True
 
         # Main Layout
         main_layout = BoxLayout(orientation="vertical", padding=2, spacing=20)
@@ -269,25 +270,42 @@ class MainScreen(Screen):
                 self.clock_event = None
             app.current_timer = None  # Clear the current timer
         else:
-            # Check if another timer is already running
-            if app.current_timer is not None and app.current_timer != self:
-                return
             # check if the previous timer is not finished yet
             current_screen_pos = app.screens.index(self.name)
+            print(
+                app.current_timer,
+                app.timers_status.get(app.screens[current_screen_pos]),
+                self,
+            )
             if current_screen_pos == 0 and (
                 sum(app.timers_status.values()) == 0
                 or sum(app.timers_status.values()) == len(app.screens)
             ):
+                print("here")
                 pass
-            elif app.timers_status.get(app.screens[current_screen_pos - 1]):
+            elif (
+                app.current_timer == self
+                and app.timers_status.get(app.screens[current_screen_pos])
+                and self.flag_mute_by_stop
+            ):
+                print("now here")
+                pass
+            elif (
+                app.timers_status.get(app.screens[current_screen_pos - 1])
+                and self.flag_mute_by_stop
+            ):
+                print("finally here")
                 pass
             else:
+                print("oh")
                 return
+
             self.running = True
             app.current_timer = self  # Set the current timer to this one
             self.start_stop_button.background_normal = PAUSE
             if self.sound or self.mute:
                 self.soft_reset(None)
+                self.flag_mute_by_stop = False
             else:
                 self.clock_event = Clock.schedule_interval(self.update_time, 1)
 
