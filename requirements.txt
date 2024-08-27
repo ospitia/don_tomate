@@ -16,3 +16,4 @@ kivy-garden
 pillow
 pystray
 pyinstaller
+-e .

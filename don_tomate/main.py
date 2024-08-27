@@ -81,9 +81,7 @@ class MainScreen(Screen):
         self.label_name = Label(text=screen, font_size="30sp", color=(0, 0, 0, 1))
 
         # Timer display
-        self.label = Label(
-            text=self.format_time(self.time), font_size="40sp", color=(0, 0, 0, 1)
-        )
+        self.label = Label(text=self.format_time(self.time), font_size="40sp", color=(0, 0, 0, 1))
 
         # Control buttons with icons
         self.start_stop_button = Button(
@@ -92,9 +90,7 @@ class MainScreen(Screen):
         )
 
         # Settings button
-        self.settings_button = Button(
-            background_normal=SETTINGS, on_press=self.open_settings
-        )
+        self.settings_button = Button(background_normal=SETTINGS, on_press=self.open_settings)
 
         # Sound/Stop Sound button
         self.stop_sound_button = Button(
@@ -149,9 +145,7 @@ class MainScreen(Screen):
 
         HB = BoxLayout(orientation="horizontal", size_hint_y=0.7, spacing=10)
 
-        main_screen_place_holder = BoxLayout(
-            orientation="vertical", size_hint_x=0.8, spacing=10
-        )
+        main_screen_place_holder = BoxLayout(orientation="vertical", size_hint_x=0.8, spacing=10)
         empty_lower_box = BoxLayout(
             orientation="vertical",
             size_hint_y=0.15,
@@ -375,19 +369,19 @@ class MainScreen(Screen):
 
 
 class SettingsScreen(Screen):
-    def __init__(self, **kwargs):
+    def __init__(self, time_options, selected_times, n_pomodoros, **kwargs):
         super(SettingsScreen, self).__init__(**kwargs)
         app = App.get_running_app()
-
+        self.time_options = time_options
+        self.selected_times = selected_times
+        self.n_pomodoros = n_pomodoros
         self.tree_nodes = {}  # To keep track of the TreeViewLabel widgets
 
         # Create a ScrollView for the TreeView
         scrollview = ScrollView(size_hint=(1, 1))
 
         # Create the TreeView
-        treeview = TreeView(
-            root_options=dict(text="Settings"), hide_root=True, size_hint_y=None
-        )
+        treeview = TreeView(root_options=dict(text="Settings"), hide_root=True, size_hint_y=None)
         treeview.bind(
             minimum_height=treeview.setter("height")
         )  # Bind treeview's height to its content
@@ -398,12 +392,10 @@ class SettingsScreen(Screen):
         # Add the numbers of pomodoros
         tree_node = treeview.add_node(TreeViewLabel(text="Cycles"))
         for n_cycles in [1, 2, 3, 4, 5, 6]:
-            cycles_node = treeview.add_node(
-                TreeViewLabel(text=str(n_cycles)), tree_node
-            )
+            cycles_node = treeview.add_node(TreeViewLabel(text=str(n_cycles)), tree_node)
 
             # Highlight the selected option
-            if n_cycles == app.n_pomodoros:
+            if n_cycles == self.n_pomodoros:
                 cycles_node.color = (0.3, 0.5, 1, 1)
 
             # Bind the selection action
@@ -421,25 +413,19 @@ class SettingsScreen(Screen):
         self.add_widget(scrollview)
 
     def add_timer_options(self, treeview):
-        app = App.get_running_app()
-        options = app.time_options
-        selected_times = app.selected_times
-
         root_node = treeview.add_node(TreeViewLabel(text="Custom timers"))
 
-        for option, time_options in options.items():
+        for option, time_options in self.time_options.items():
             tree_node = treeview.add_node(TreeViewLabel(text=option), root_node)
 
             for time_option in time_options:
-                time_node = treeview.add_node(
-                    TreeViewLabel(text=time_option), tree_node
-                )
+                time_node = treeview.add_node(TreeViewLabel(text=time_option), tree_node)
 
                 # Store reference to the TreeViewLabel node
                 self.tree_nodes[(option, time_option)] = time_node
 
                 # Highlight the selected time
-                if selected_times[option] == time_option:
+                if self.selected_times[option] == time_option:
                     time_node.color = (0.3, 0.5, 1, 1)
 
                 # Bind the selection action
@@ -469,7 +455,7 @@ class SettingsScreen(Screen):
                 )  # Default color
 
             # Update the selected time
-            app.selected_times[screen] = time
+            self.selected_times[screen] = time
 
             # Highlight the new selection
             self.tree_nodes[(screen, time)].color = (0.3, 0.5, 1, 1)
@@ -488,12 +474,12 @@ class SettingsScreen(Screen):
     def select_cycles(self, instance, touch, n_cycles):
         if instance.collide_point(*touch.pos):
             app = App.get_running_app()
-            app.n_pomodoros = int(n_cycles.text)  # Update the number of Pomodoros
+            self.n_pomodoros = int(n_cycles.text)  # Update the number of Pomodoros
             app.rebuild_screens()  # Rebuild screens with the new number of Pomodoros
 
 
 class DonTomateApp(App):
-    def build(self, n_pomodoros=2):
+    def build(self, n_pomodoros=1):
         self.icon = ICON
         self.screen_map = {}
         self.time_options = {}
@@ -503,12 +489,19 @@ class DonTomateApp(App):
         self.timers_status = {}
         self.make_screen_mapping()
 
-        self.screens = list(self.screen_map.values())
+        self.screens = ["main", "long_break"]
 
         sm = ScreenManager()
         sm = self.build_screens(sm)
 
-        sm.add_widget(SettingsScreen(name="settings"))
+        sm.add_widget(
+            SettingsScreen(
+                name="settings",
+                time_options=self.time_options,
+                selected_times=self.selected_times,
+                n_pomodoros=self.n_pomodoros,
+            )
+        )
         return sm
 
     def make_screen_mapping(self):
@@ -554,6 +547,7 @@ class DonTomateApp(App):
         self.screen_map = screen_map
         self.time_options = time_options
         self.selected_times = selected_times
+        self.screens = list(screen_map.values())
 
     def build_screens(self, sm):
         if self.n_pomodoros == 1:
