@@ -266,32 +266,23 @@ class MainScreen(Screen):
         else:
             # check if the previous timer is not finished yet
             current_screen_pos = app.screens.index(self.name)
-            print(
-                app.current_timer,
-                app.timers_status.get(app.screens[current_screen_pos]),
-                self,
-            )
             if current_screen_pos == 0 and (
                 sum(app.timers_status.values()) == 0
                 or sum(app.timers_status.values()) == len(app.screens)
             ):
-                print("here")
                 pass
             elif (
                 app.current_timer == self
                 and app.timers_status.get(app.screens[current_screen_pos])
                 and self.flag_mute_by_stop
             ):
-                print("now here")
                 pass
             elif (
                 app.timers_status.get(app.screens[current_screen_pos - 1])
                 and self.flag_mute_by_stop
             ):
-                print("finally here")
                 pass
             else:
-                print("oh")
                 return
 
             self.running = True
@@ -308,7 +299,7 @@ class MainScreen(Screen):
         app = App.get_running_app()
         app.current_timer = None  # Clear the current timer
 
-    def soft_reset(self, instance):
+    def soft_reset(self, instance, **kwargs):
         self.running = False
         if self.clock_event:
             self.clock_event.cancel()
@@ -317,7 +308,7 @@ class MainScreen(Screen):
         self.label.text = self.format_time(self.time)
         self.start_stop_button.background_normal = PLAY
         self.stop_sound(None)
-        self.mute = None
+        self.mute = True if kwargs.get("inactive_stop") else None
         self.stop_sound_button.disabled = True
         self.stop_sound_button.opacity = 0
         self.stop_sound_button.background_normal = SOUND
@@ -333,6 +324,11 @@ class MainScreen(Screen):
                 self.running = False
                 self.label.text = "Time's up!"
                 self.notify_time()
+                self.sound.bind(
+                    on_stop=lambda instance=dt, inactive_stop=True,: self.soft_reset(
+                        instance=instance, inactive_stop=inactive_stop
+                    )
+                )
 
     def notify_time(self):
         self.sound = SoundLoader.load(SOUND_PATH)
@@ -559,7 +555,7 @@ class DonTomateApp(App):
             MainScreen(
                 name="main",
                 screen="Pomodoro 1",
-                duration=25 * 60,
+                duration=5 * 1,
                 previous_screen_name="long_break",
                 next_screen_name=next_screen_name,
             )
