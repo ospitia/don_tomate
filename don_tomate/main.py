@@ -48,6 +48,19 @@ class ColoredBoxLayout(BoxLayout):
 
 
 class MainScreen(Screen):
+    """
+    The main screen for the Pomodoro timer application.
+
+    Attributes:
+        duration (int): Duration of the timer in seconds.
+        time (int): Current remaining time of the timer in seconds.
+        running (bool): Indicates if the timer is currently running.
+        clock_event (ClockEvent): The clock event for the timer update.
+        sound (Sound): The sound to play when the timer finishes.
+        mute (bool): Indicates if the sound is muted.
+        flag_mute_by_stop (bool): Indicates if the sound should be muted when stopped.
+    """
+
     def __init__(
         self,
         screen="Pomodoro 1",
@@ -58,6 +71,17 @@ class MainScreen(Screen):
         next_screen_name="break",
         **kwargs,
     ):
+        """
+        gets the MainScreen started with UI components and timer settings.
+
+        Args:
+            screen (str): The name of the screen (e.g., "Pomodoro 1").
+            duration (int): Duration of the timer in seconds.
+            dir_left_button_opacity (float): Opacity of the left direction button.
+            dir_left_button_disabled (bool): Indicates if the left direction button is disabled.
+            previous_screen_name (str): Name of the previous screen.
+            next_screen_name (str): Name of the next screen.
+        """
         super(MainScreen, self).__init__(**kwargs)
         self.duration = duration
         self.time = self.duration
@@ -249,14 +273,36 @@ class MainScreen(Screen):
         self.add_widget(main_layout)
 
     def _update_rect(self, instance, value):
+        """
+        Updates the background rectangle size and position based on the layout.
+
+        Args:
+            instance: The instance of the widget calling this method.
+            value: The new value for size or position.
+        """
         self.rect.pos = instance.pos
         self.rect.size = instance.size
 
     def format_time(self, seconds):
+        """
+        Formats the given time in seconds to a string in the format MM:SS.
+
+        Args:
+            seconds (int): The time in seconds.
+
+        Returns:
+            str: The formatted time string.
+        """
         minutes, seconds = divmod(seconds, 60)
         return f"{minutes:02}:{seconds:02}"
 
     def start_stop(self, instance):
+        """
+        Starts or stops the timer when the start/stop button is pressed.
+
+        Args:
+            instance: The button instance that triggered this method.
+        """
         app = App.get_running_app()
 
         if self.running:
@@ -298,11 +344,24 @@ class MainScreen(Screen):
                 self.clock_event = Clock.schedule_interval(self.update_time, 1)
 
     def reset_timer(self, instance):
+        """
+        Resets the timer to its initial duration and stops any running clock events.
+
+        Args:
+            instance: The button instance that triggered this method.
+        """
         self.soft_reset(None)
         app = App.get_running_app()
         app.current_timer = None  # Clear the current timer
 
     def soft_reset(self, instance, **kwargs):
+        """
+        Soft resets the timer without clearing the current timer. Stops sound and updates the UI.
+
+        Args:
+            instance: The button instance that triggered this method.
+            **kwargs: Additional keyword arguments.
+        """
         self.running = False
         if self.clock_event:
             self.clock_event.cancel()
@@ -317,6 +376,12 @@ class MainScreen(Screen):
         self.stop_sound_button.background_normal = SOUND
 
     def update_time(self, dt):
+        """
+        Updates the timer every second. Stops the timer when time is up.
+
+        Args:
+            dt (float): The time delta since the last update.
+        """
         if self.running:
             if self.time > 0:
                 self.time -= 1
@@ -328,12 +393,15 @@ class MainScreen(Screen):
                 self.label.text = "Time's up!"
                 self.notify_time()
                 self.sound.bind(
-                    on_stop=lambda instance=dt, inactive_stop=True,: self.soft_reset(
+                    on_stop=lambda instance=None, inactive_stop=True: self.soft_reset(
                         instance=instance, inactive_stop=inactive_stop
                     )
                 )
 
     def notify_time(self):
+        """
+        Plays the notification sound when the timer finishes.
+        """
         self.sound = SoundLoader.load(SOUND_PATH)
         if self.sound:
             self.sound.play()
@@ -343,6 +411,12 @@ class MainScreen(Screen):
             print("Sound file not found!")
 
     def stop_sound(self, instance):
+        """
+        Stops the sound if it is playing and updates the mute state.
+
+        Args:
+            instance: The button instance that triggered this method.
+        """
         if self.sound:
             self.sound.stop()
             self.mute = True
@@ -353,22 +427,58 @@ class MainScreen(Screen):
             self.stop_sound_button.disabled = True
 
     def open_settings(self, instance):
+        """
+        Opens the settings screen when the settings button is pressed.
+
+        Args:
+            instance: The button instance that triggered this method.
+        """
         self.manager.transition = SlideTransition(direction="left")
         app = App.get_running_app()
         app.prev_screen = self.manager.current
         self.manager.current = "settings"
 
     def next_screen(self, instance):
+        """
+        Transitions to the next screen when the next button is pressed.
+
+        Args:
+            instance: The button instance that triggered this method.
+        """
         self.manager.transition = SlideTransition(direction="left")
         self.manager.current = self.next_screen_name
 
     def previous_screen(self, instance):
+        """
+        Transitions to the previous screen when the previous button is pressed.
+
+        Args:
+            instance: The button instance that triggered this method.
+        """
         self.manager.transition = SlideTransition(direction="right")
         self.manager.current = self.previous_screen_name
 
 
 class SettingsScreen(Screen):
+    """
+    The settings screen for customizing timer options and other configurations.
+
+    Attributes:
+        time_options (dict): A dictionary of available timer options.
+        selected_times (dict): A dictionary of the selected times for each timer.
+        n_pomodoros (int): The number of Pomodoro cycles.
+        tree_nodes (dict): A dictionary to store references to TreeViewLabel nodes.
+    """
+
     def __init__(self, time_options, selected_times, n_pomodoros, **kwargs):
+        """
+        gets the SettingsScreen started for the timer options and other settings.
+
+        Args:
+            time_options (dict): A dictionary of available timer options.
+            selected_times (dict): A dictionary of the selected times for each timer.
+            n_pomodoros (int): The number of Pomodoro cycles.
+        """
         super(SettingsScreen, self).__init__(**kwargs)
         self.time_options = time_options
         self.selected_times = selected_times
@@ -417,9 +527,23 @@ class SettingsScreen(Screen):
         self.add_widget(scrollview)
 
     def update_node_text(self, node, text):
+        """
+        Updates the text of a TreeViewLabel node.
+
+        Args:
+            node (TreeViewLabel): The node to update.
+            text (str): The new text for the node.
+        """
         node.text = text
 
     def toggle_always_on_top(self, instance, touch):
+        """
+        Toggles the "Always on Top" window option.
+
+        Args:
+            instance (TreeViewLabel): The node that was touched.
+            touch: The touch event instance.
+        """
         if instance.collide_point(*touch.pos):
             if platform.system() == "Darwin":
                 NSApplication = objc.lookUpClass("NSApplication")
@@ -435,6 +559,13 @@ class SettingsScreen(Screen):
                     self.update_node_text(self.always_on_top_node, "Float on Top On")
 
     def toggle_transparency(self, instance, touch):
+        """
+        Toggles the window transparency option.
+
+        Args:
+            instance (TreeViewLabel): The node that was touched.
+            touch: The touch event instance.
+        """
         if instance.collide_point(*touch.pos):
             current_text = self.transparency_node.text
             if "On" in current_text:
@@ -445,6 +576,12 @@ class SettingsScreen(Screen):
                 self.update_node_text(self.transparency_node, "Translucent On")
 
     def add_timer_options(self, treeview):
+        """
+        Adds timer options to the TreeView.
+
+        Args:
+            treeview (TreeView): The TreeView to which the timer options are added.
+        """
         root_node = treeview.add_node(TreeViewLabel(text="Custom timers"))
 
         for option, time_options in self.time_options.items():
@@ -468,12 +605,28 @@ class SettingsScreen(Screen):
                 )
 
     def done_settings(self, instance, touch):
+        """
+        Saves settings and returns to the previous screen.
+
+        Args:
+            instance (TreeViewLabel): The node that was touched.
+            touch: The touch event instance.
+        """
         self.manager.transition = SlideTransition(direction="right")
         if instance.collide_point(*touch.pos):
             app = App.get_running_app()
             self.manager.current = app.prev_screen
 
     def select_time(self, instance, touch, screen, time):
+        """
+        Selects a specific timer option and updates the TreeView to reflect the selection.
+
+        Args:
+            instance (TreeViewLabel): The node that was touched.
+            touch: The touch event instance.
+            screen (str): The name of the screen associated with the timer (e.g., "Pomodoro 1").
+            time (str): The selected time option (e.g., "25 min").
+        """
         if instance.collide_point(*touch.pos):
             app = App.get_running_app()
             # Reset the color of the previous selection
@@ -504,6 +657,14 @@ class SettingsScreen(Screen):
             app.root.get_screen(selected_screen).reset_timer(None)
 
     def select_cycles(self, instance, touch, n_cycles):
+        """
+        Handles the selection of the number of Pomodoro cycles (n_cycles) in the settings screen.
+
+        Args:
+            instance (kivy.uix.treeview.TreeViewLabel): The TreeViewLabel instance that was touched.
+            touch (kivy.input.motionevent.MotionEvent): The touch event that triggered the method.
+            n_cycles (int): The selected number of Pomodoro cycles.
+        """
         if instance.collide_point(*touch.pos):
             app = App.get_running_app()
             self.n_pomodoros = int(n_cycles.text)  # Update the number of Pomodoros
@@ -513,7 +674,21 @@ class SettingsScreen(Screen):
 
 
 class DonTomateApp(App):
+    """
+    The main application class for the Don Tomate Pomodoro app.
+    Manages the app's screens, timers, and settings.
+    """
+
     def build(self, n_pomodoros=4):
+        """
+        Builds the main application interface, including the screen manager and initial screens.
+
+        Args:
+            n_pomodoros (int): The number of Pomodoro cycles (default is 4).
+
+        Returns:
+            ScreenManager: The screen manager containing all the screens of the app.
+        """
         self.icon = ICON
         self.screen_map = {}
         self.time_options = {}
@@ -538,6 +713,11 @@ class DonTomateApp(App):
         return sm
 
     def make_screen_mapping(self):
+        """
+        Creates mappings for the screen names, time options, and selected times
+        based on the number of Pomodoro cycles. This mapping is used to manage
+        transitions between different screens in the app.
+        """
         pomodoro_time_options = [
             "05:00",
             "10:00",
@@ -578,6 +758,15 @@ class DonTomateApp(App):
         self.screens = list(screen_map.values())
 
     def build_screens(self, sm):
+        """
+        Creates and adds all the Pomodoro, break, and long break screens to the screen manager.
+
+        Args:
+            sm (ScreenManager): The screen manager to which the screens will be added.
+
+        Returns:
+            ScreenManager: The updated screen manager with all the screens added.
+        """
         if self.n_pomodoros == 1:
             next_screen_name = "long_break"
         else:
@@ -628,6 +817,12 @@ class DonTomateApp(App):
         return sm
 
     def rebuild_screens(self, n_pomodoros):
+        """
+        Rebuild the screens in the application based on the updated number of Pomodoros.
+
+        Args:
+            n_pomodoros (int): The number of Pomodoro cycles to set up.
+        """
         self.n_pomodoros = n_pomodoros
         self.make_screen_mapping()  # Recreate the screen mappings based on the new number of Pomodoros
         self.screens = list(self.screen_map.values())
