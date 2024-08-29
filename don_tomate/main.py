@@ -12,6 +12,9 @@ from kivy.uix.screenmanager import SlideTransition
 from kivy.uix.screenmanager import Screen
 from kivy.uix.treeview import TreeView, TreeViewLabel
 from kivy.uix.scrollview import ScrollView
+import platform
+import objc
+from Quartz import kCGStatusWindowLevel, kCGNormalWindowLevel
 
 base_path = Path(__file__).parent / "don_tomate" / "Resources"
 
@@ -367,20 +370,17 @@ class MainScreen(Screen):
 class SettingsScreen(Screen):
     def __init__(self, time_options, selected_times, n_pomodoros, **kwargs):
         super(SettingsScreen, self).__init__(**kwargs)
-        app = App.get_running_app()
         self.time_options = time_options
         self.selected_times = selected_times
         self.n_pomodoros = n_pomodoros
-        self.tree_nodes = {}  # To keep track of the TreeViewLabel widgets
+        self.tree_nodes = {}
 
         # Create a ScrollView for the TreeView
         scrollview = ScrollView(size_hint=(1, 1))
 
         # Create the TreeView
         treeview = TreeView(root_options=dict(text="Settings"), hide_root=True, size_hint_y=None)
-        treeview.bind(
-            minimum_height=treeview.setter("height")
-        )  # Bind treeview's height to its content
+        treeview.bind(minimum_height=treeview.setter("height"))
 
         # Timer options
         self.add_timer_options(treeview)
@@ -401,12 +401,48 @@ class SettingsScreen(Screen):
                 )
             )
 
-        # Add the Done button as part of the tree
+        # Always on Top option
+        self.always_on_top_node = treeview.add_node(TreeViewLabel(text="Float on Top On"))
+        self.always_on_top_node.bind(on_touch_down=self.toggle_always_on_top)
+
+        # Transparency option
+        self.transparency_node = treeview.add_node(TreeViewLabel(text="Translucent On"))
+        self.transparency_node.bind(on_touch_down=self.toggle_transparency)
+
+        # Done button
         done_node = treeview.add_node(TreeViewLabel(text="Done"))
         done_node.bind(on_touch_down=self.done_settings)
 
         scrollview.add_widget(treeview)
         self.add_widget(scrollview)
+
+    def update_node_text(self, node, text):
+        node.text = text
+
+    def toggle_always_on_top(self, instance, touch):
+        if instance.collide_point(*touch.pos):
+            if platform.system() == "Darwin":
+                NSApplication = objc.lookUpClass("NSApplication")
+                app = NSApplication.sharedApplication()
+                window = app.windows()[0]  # Get the main window
+
+                current_text = self.always_on_top_node.text
+                if "On" in current_text:
+                    window.setLevel_(kCGStatusWindowLevel)  # Set to "Always on Top"
+                    self.update_node_text(self.always_on_top_node, "Float on Top Off")
+                else:
+                    window.setLevel_(kCGNormalWindowLevel)  # Set back to normal
+                    self.update_node_text(self.always_on_top_node, "Float on Top On")
+
+    def toggle_transparency(self, instance, touch):
+        if instance.collide_point(*touch.pos):
+            current_text = self.transparency_node.text
+            if "On" in current_text:
+                Window.opacity = 0.8  # Adjust opacity as needed
+                self.update_node_text(self.transparency_node, "Translucent Off")
+            else:
+                Window.opacity = 1  # Reset opacity to full
+                self.update_node_text(self.transparency_node, "Translucent On")
 
     def add_timer_options(self, treeview):
         root_node = treeview.add_node(TreeViewLabel(text="Custom timers"))
@@ -471,11 +507,13 @@ class SettingsScreen(Screen):
         if instance.collide_point(*touch.pos):
             app = App.get_running_app()
             self.n_pomodoros = int(n_cycles.text)  # Update the number of Pomodoros
-            app.rebuild_screens()  # Rebuild screens with the new number of Pomodoros
+            app.rebuild_screens(
+                self.n_pomodoros
+            )  # Rebuild screens with the new number of Pomodoros
 
 
 class DonTomateApp(App):
-    def build(self, n_pomodoros=1):
+    def build(self, n_pomodoros=4):
         self.icon = ICON
         self.screen_map = {}
         self.time_options = {}
@@ -483,9 +521,8 @@ class DonTomateApp(App):
         self.n_pomodoros = n_pomodoros
         self.current_timer = None
         self.timers_status = {}
-        self.make_screen_mapping()
-
         self.screens = ["main", "long_break"]
+        self.make_screen_mapping()
 
         sm = ScreenManager()
         sm = self.build_screens(sm)
@@ -555,7 +592,7 @@ class DonTomateApp(App):
             MainScreen(
                 name="main",
                 screen="Pomodoro 1",
-                duration=5 * 1,
+                duration=25 * 60,
                 previous_screen_name="long_break",
                 next_screen_name=next_screen_name,
             )
@@ -595,7 +632,8 @@ class DonTomateApp(App):
 
         return sm
 
-    def rebuild_screens(self):
+    def rebuild_screens(self, n_pomodoros):
+        self.n_pomodoros = n_pomodoros
         self.make_screen_mapping()  # Recreate the screen mappings based on the new number of Pomodoros
         self.screens = list(self.screen_map.values())
 
@@ -604,7 +642,14 @@ class DonTomateApp(App):
 
         sm = self.build_screens(sm)  # Rebuild the screens
 
-        sm.add_widget(SettingsScreen(name="settings"))  # Add the settings screen back
+        sm.add_widget(
+            SettingsScreen(
+                name="settings",
+                time_options=self.time_options,
+                selected_times=self.selected_times,
+                n_pomodoros=n_pomodoros,
+            )
+        )  # Add the settings screen back
         sm.current = "main"  # Return to the main screen after rebuilding
 
 
