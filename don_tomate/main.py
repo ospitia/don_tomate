@@ -538,43 +538,38 @@ class DonTomateApp(App):
         return sm
 
     def make_screen_mapping(self):
+        pomodoro_time_options = [
+            "05:00",
+            "10:00",
+            "15:00",
+            "20:00",
+            "25:00",
+            "30:00",
+        ]
+        break_time_options = [
+            "05:00",
+            "10:00",
+            "15:00",
+            "20:00",
+            "25:00",
+            "30:00",
+        ]
         screen_map, time_options, selected_times = {}, {}, {}
         for i in range(self.n_pomodoros + 1):
             if i == 0:
                 screen_map["Pomodoro 1"] = "main"
-                time_options["Pomodoro 1"] = ["15:00", "25:00", "30:00"]
+                time_options["Pomodoro 1"] = pomodoro_time_options
                 selected_times["Pomodoro 1"] = "25:00"
             elif i == self.n_pomodoros:
                 screen_map["Long Break"] = "long_break"
-                time_options["Long Break"] = [
-                    "05:00",
-                    "10:00",
-                    "15:00",
-                    "20:00",
-                    "25:00",
-                    "30:00",
-                ]
+                time_options["Long Break"] = break_time_options
                 selected_times["Long Break"] = "15:00"
             else:
                 screen_map[f"Short Break {i}"] = f"break_{i}"
-                time_options[f"Short Break {i}"] = [
-                    "05:00",
-                    "10:00",
-                    "15:00",
-                    "20:00",
-                    "25:00",
-                    "30:00",
-                ]
+                time_options[f"Short Break {i}"] = break_time_options
                 selected_times[f"Short Break {i}"] = "05:00"
                 screen_map[f"Pomodoro {i + 1}"] = f"main_{i + 1}"
-                time_options[f"Pomodoro {i + 1}"] = [
-                    "05:00",
-                    "10:00",
-                    "15:00",
-                    "20:00",
-                    "25:00",
-                    "30:00",
-                ]
+                time_options[f"Pomodoro {i + 1}"] = pomodoro_time_options
                 selected_times[f"Pomodoro {i + 1}"] = "25:00"
 
         self.screen_map = screen_map
