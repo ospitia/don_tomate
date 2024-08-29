@@ -69,3 +69,5 @@ Carthage/Build
 .env
 .idea/
 *.DS_Store
+*dist/
+*__pycache__/
