@@ -31,7 +31,7 @@ PREV = str(base_path / "prev.png")
 STATUS_MENU_ICON = str(base_path / "status_menu_icon.png")
 
 # Default window size
-Window.size = (500, 300)
+Window.size = (400, 200)
 
 
 class ColoredBoxLayout(BoxLayout):
@@ -58,7 +58,6 @@ class MainScreen(Screen):
         clock_event (ClockEvent): The clock event for the timer update.
         sound (Sound): The sound to play when the timer finishes.
         mute (bool): Indicates if the sound is muted.
-        flag_mute_by_stop (bool): Indicates if the sound should be muted when stopped.
     """
 
     def __init__(
@@ -92,7 +91,6 @@ class MainScreen(Screen):
         self.mute = None
         self.previous_screen_name = previous_screen_name
         self.next_screen_name = next_screen_name
-        self.flag_mute_by_stop = True
 
         # Main Layout
         main_layout = BoxLayout(orientation="vertical", padding=2, spacing=20)
@@ -315,21 +313,13 @@ class MainScreen(Screen):
         else:
             # check if the previous timer is not finished yet
             current_screen_pos = app.screens.index(self.name)
-            if current_screen_pos == 0 and (
-                sum(app.timers_status.values()) == 0
-                or sum(app.timers_status.values()) == len(app.screens)
+            if current_screen_pos == 0 and (sum(app.timers_status.values()) == 0):
+                pass
+            elif app.current_timer == self and app.timers_status.get(
+                app.screens[current_screen_pos]
             ):
                 pass
-            elif (
-                app.current_timer == self
-                and app.timers_status.get(app.screens[current_screen_pos])
-                and self.flag_mute_by_stop
-            ):
-                pass
-            elif (
-                app.timers_status.get(app.screens[current_screen_pos - 1])
-                and self.flag_mute_by_stop
-            ):
+            elif app.timers_status.get(app.screens[current_screen_pos - 1]):
                 pass
             else:
                 return
@@ -339,7 +329,6 @@ class MainScreen(Screen):
             self.start_stop_button.background_normal = PAUSE
             if self.sound or self.mute:
                 self.soft_reset(None)
-                self.flag_mute_by_stop = False
             else:
                 self.clock_event = Clock.schedule_interval(self.update_time, 1)
 
@@ -350,7 +339,7 @@ class MainScreen(Screen):
         Args:
             instance: The button instance that triggered this method.
         """
-        self.soft_reset(None)
+        self.soft_reset(None, reset=True)
         app = App.get_running_app()
         app.current_timer = None  # Clear the current timer
 
@@ -369,8 +358,12 @@ class MainScreen(Screen):
         self.time = self.duration
         self.label.text = self.format_time(self.time)
         self.start_stop_button.background_normal = PLAY
-        self.stop_sound(None)
-        self.mute = True if kwargs.get("inactive_stop") else None
+        if not kwargs.get("reset") or self.sound:
+            self.stop_sound(None)
+            # self.mute = True if kwargs.get("inactive_stop") else None
+            app = App.get_running_app()
+            if sum(app.timers_status.values()) == len(app.screens):
+                app.rebuild_screens(app.n_pomodoros)
         self.stop_sound_button.disabled = True
         self.stop_sound_button.opacity = 0
         self.stop_sound_button.background_normal = SOUND
@@ -387,14 +380,12 @@ class MainScreen(Screen):
                 self.time -= 1
                 self.label.text = self.format_time(self.time)
             else:
-                app = App.get_running_app()
-                app.timers_status[self.name] = True
                 self.running = False
                 self.label.text = "Time's up!"
                 self.notify_time()
                 self.sound.bind(
-                    on_stop=lambda instance=None, inactive_stop=True: self.soft_reset(
-                        instance=instance, inactive_stop=inactive_stop
+                    on_stop=lambda instance=None, inactive_stop=True: self.stop_sound(
+                        instance=instance,  # inactive_stop=inactive_stop
                     )
                 )
 
@@ -425,6 +416,9 @@ class MainScreen(Screen):
             self.sound = None
         else:
             self.stop_sound_button.disabled = True
+        app = App.get_running_app()
+        app.timers_status[self.name] = True
+        self.next_screen(None)
 
     def open_settings(self, instance):
         """
@@ -823,6 +817,8 @@ class DonTomateApp(App):
         Args:
             n_pomodoros (int): The number of Pomodoro cycles to set up.
         """
+        self.current_timer = None
+        self.timers_status = {}
         self.n_pomodoros = n_pomodoros
         self.make_screen_mapping()  # Recreate the screen mappings based on the new number of Pomodoros
         self.screens = list(self.screen_map.values())
