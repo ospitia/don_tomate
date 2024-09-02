@@ -418,6 +418,7 @@ class MainScreen(Screen):
             self.stop_sound_button.disabled = True
         app = App.get_running_app()
         app.timers_status[self.name] = True
+        self.next_screen(None)
 
     def open_settings(self, instance):
         """
