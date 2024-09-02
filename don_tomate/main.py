@@ -31,7 +31,7 @@ PREV = str(base_path / "prev.png")
 STATUS_MENU_ICON = str(base_path / "status_menu_icon.png")
 
 # Default window size
-Window.size = (500, 300)
+Window.size = (400, 200)
 
 
 class ColoredBoxLayout(BoxLayout):
